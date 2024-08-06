@@ -6,107 +6,76 @@ using UnityEngine;
 public class PlayerMovement : NetworkBehaviour
 {
     [Header("Player Movement Vars")]
-    [SerializeField] float speed;
+    [SerializeField] float moveSpeed;
     [SerializeField] float maxSpeed;
-
+    float horizontalInput;
+    float verticalInput;
+    Vector3 moveDir;
+    bool inAnim;
 
     [Header("Player Movement Componenets")]
-    [SerializeField] Transform playerObj;
-    [SerializeField] Transform playerModel;
-    [SerializeField] Rigidbody rb;
+    [SerializeField] Transform orientation;
+    [SerializeField] Transform camPos;
+    [SerializeField] GameObject camObj;
     [SerializeField] Animator playerAnim;
-
-    [Header("Jump Collision Componets")]
-    [SerializeField] LayerMask ground;
-
-    float horizontal;
-    float vertical;
-    float rotation;
+    GameObject playerCam;
+    Rigidbody rb;
+    
 
     // Start is called before the first frame update
     void Start()
     {
-
+        rb = GetComponent<Rigidbody>();
+        inAnim = false;
     }
 
     // Update is called once per frame
     void Update()
     {
         if (!IsOwner) return;
-        PlayerInput();
-        RotatePlayer();
 
+        PlayerInput();
+        SetAnimations();
     }
 
     private void FixedUpdate()
     {
         if (!IsOwner) return;
-        MovePlayerServerRpc(horizontal, vertical);
-        PlayerRotationServerRpc(rotation);
-
-
+        MovePlayerServerRpc(verticalInput, horizontalInput, inAnim);
     }
+
 
     //gets player input
     void PlayerInput()
     {
-        horizontal = Input.GetAxisRaw("Horizontal");
-        vertical = Input.GetAxisRaw("Vertical");
-
-
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+        verticalInput = Input.GetAxisRaw("Vertical");
     }
 
-    //rotates player depending on input
-    void RotatePlayer()
+    void SetAnimations()
     {
-        if (horizontal == 1)
+        //if both input vars != 0 then animate 
+        if(horizontalInput != 0 || verticalInput != 0)
         {
-            playerModel.rotation = Quaternion.Euler(0, 90, 0);
-            rotation = 90;
+            inAnim = true;
         }
-        else if (horizontal == -1)
+        else
         {
-            playerModel.rotation = Quaternion.Euler(0, -90, 0);
-            rotation = -90;
-        }
-
-        if (vertical == 1)
-        {
-            playerModel.rotation = Quaternion.Euler(0, 0, 0);
-            rotation = 0;
-        }
-        else if (vertical == -1)
-        {
-            playerModel.rotation = Quaternion.Euler(0, 180, 0);
-            rotation = 180;
+            inAnim = false;
         }
     }
 
-    //tells the server to move the player
+    //moves the player on the server side
     [ServerRpc]
-    void MovePlayerServerRpc(float horizontal, float vertical)
+    void MovePlayerServerRpc(float vertical, float horizontal, bool inRunAnim)
     {
-        if (Mathf.Abs(rb.velocity.magnitude) >= maxSpeed)
+        //checks if the player is above the maxSpeeds
+        if(Mathf.Abs(rb.velocity.magnitude) > maxSpeed)
         {
             return;
         }
-
-        var moveDirection = playerObj.forward * vertical + playerObj.right * horizontal;
-        rb.AddForce(moveDirection * speed, ForceMode.Force);
-        playerAnim.SetBool("inMovement", true);
-
-        //checks if the players has stopped moving to set animations to false
-        if (Mathf.Abs(rb.velocity.magnitude) < 0.5f)
-        {
-            playerAnim.SetBool("inMovement", false);
-        }
+        moveDir = orientation.forward * vertical + orientation.right * horizontal;
+        rb.AddForce(moveDir * moveSpeed, ForceMode.Force);
+        playerAnim.SetBool("inMovement", inRunAnim);
     }
-
-    //tells server what direction the player is facing
-    [ServerRpc]
-    void PlayerRotationServerRpc(float y)
-    {
-        playerModel.rotation = Quaternion.Euler(0f, y, 0f);
-    }
-
 }
