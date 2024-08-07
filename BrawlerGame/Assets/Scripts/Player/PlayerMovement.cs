@@ -18,7 +18,6 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] Transform camPos;
     [SerializeField] GameObject camObj;
     [SerializeField] Animator playerAnim;
-    GameObject playerCam;
     Rigidbody rb;
     
 
@@ -76,6 +75,9 @@ public class PlayerMovement : NetworkBehaviour
         }
         moveDir = orientation.forward * vertical + orientation.right * horizontal;
         rb.AddForce(moveDir * moveSpeed, ForceMode.Force);
-        playerAnim.SetBool("inMovement", inRunAnim);
+        //playerAnim.SetBool("inMovement", inRunAnim);
     }
+
+
+
 }

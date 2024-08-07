@@ -16,6 +16,8 @@ public class PlayerCam : NetworkBehaviour
     [Header("Player Cam Components")]
     [SerializeField] Transform orientation;
     [SerializeField] Transform playerModel;
+    [SerializeField] Transform playerArm;
+
 
     // Start is called before the first frame update
     void Start()
